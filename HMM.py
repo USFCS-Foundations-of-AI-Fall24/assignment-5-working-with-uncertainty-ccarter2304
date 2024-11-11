@@ -4,6 +4,8 @@ import random
 import argparse
 import codecs
 import os
+import sys
+
 import numpy
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -34,12 +36,30 @@ class HMM:
         self.emissions = emissions
 
     ## part 1 - you do this.
+    #TODO: Create unit test for load
     def load(self, basename):
         """reads HMM structure from transition (basename.trans),
         and emission (basename.emit) files,
         as well as the probabilities."""
-        pass
+        emit_dict = {}
+        trans_dict = {}
+        val_dict = {}
+        emit = open((basename + '.emit')).readlines()
+        for e in emit :
+            #print(e)
+            key,values,prob = e.split(' ')
+            if key not in emit_dict:
+                emit_dict[key] = {}
+            emit_dict[key][values] = prob.strip()
 
+        trans = open((basename + '.trans')).readlines()
+        for t in trans :
+            key,values,prob = t.split(' ')
+            if key not in trans_dict:
+                trans_dict[key] = {}
+            trans_dict[key][values] = prob.strip()
+        self.transitions = trans_dict
+        self.emissions = emit_dict
 
    ## you do this.
     def generate(self, n):
@@ -63,6 +83,12 @@ class HMM:
 
 
 
+
+if __name__ == '__main__':
+    h = HMM()
+    h.load('cat')
+    print(h.transitions)
+    print(h.emissions)
 
 
 
