@@ -5,8 +5,7 @@ import argparse
 import codecs
 import os
 import sys
-
-import numpy
+import numpy as np
 
 # Sequence - represents a sequence of hidden states and corresponding
 # output variables.
@@ -63,8 +62,38 @@ class HMM:
 
    ## you do this.
     def generate(self, n):
+        emit_seq = []
+        trans_seq = []
+
+        emit_seq_list = list(self.emissions.values())
+        trans_seq_list = list(self.transitions.values())
+
+        # ref: - https://sparkbyexamples.com/python/get-python-dictionary-values-to-list/
+        emits_list = [e for e in emit_seq_list[1]]
+        trans_list = [t for t in trans_seq_list[1]]
+
+        emit_seq_list = [list(p.values())for p in emit_seq_list]
+        trans_seq_list = [list(q.values())for q in trans_seq_list]
         """return an n-length Sequence by randomly sampling from this HMM."""
-        pass
+       ## starting state
+        emit_state = np.random.choice(list(emits_list), p=emit_seq_list[0])
+        trans_state = np.random.choice(list(trans_list), p=trans_seq_list[0])
+
+        emit_seq.append(emit_state)
+        trans_seq.append(trans_state)
+        for i in range(n - 1):
+            p_n = random.randint(0, len(trans_list) - 1)
+            n_ts = np.random.choice(trans_list, p=trans_seq_list[p_n])
+            n_es = np.random.choice(emits_list, p=emit_seq_list[p_n])
+
+            emit_seq.append(n_es)
+            trans_seq.append(n_ts)
+
+        emit_seq = [str(t) for t in emit_seq]
+        trans_seq = [str(s) for s in trans_seq]
+
+        return Sequence(trans_seq, emit_seq)
+
 
     def forward(self, sequence):
         pass
@@ -87,8 +116,16 @@ class HMM:
 if __name__ == '__main__':
     h = HMM()
     h.load('cat')
-    print(h.transitions)
-    print(h.emissions)
+    # print(h.transitions)
+    # print(h.emissions)
 
+    # if len(sys.argv) < 3:
+    #     print("Please provide all arguments")
+
+    # basename = sys.argv[1]
+    # func = sys.argv[2]
+    # param = sys.argv[3]
+
+    print(h.generate(20))
 
 
