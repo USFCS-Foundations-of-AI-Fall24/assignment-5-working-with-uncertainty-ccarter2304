@@ -55,34 +55,19 @@ def create_query() :
 
     alarm_infer = VariableElimination(alarm_model)
 
-    queries = []
+    print(alarm_infer.query(variables=["JohnCalls"],evidence={"Earthquake":"yes"}))
+    q = alarm_infer.query(variables=["JohnCalls", "Earthquake"],evidence={"Burglary":"yes","MaryCalls":"yes"})
+    print(q)
 
-    #print(alarm_infer.query(variables=["JohnCalls"],evidence={"Earthquake":"yes"}))
-    q_1 = alarm_infer.query(variables=["JohnCalls", "Earthquake"],evidence={"Burglary":"yes","MaryCalls":"yes"})
-    queries.append(q_1)
-    #print(q_1)
+    print("Query 2: the probability of Mary Calling given that John called")
+    print(alarm_infer.query(variables=["MaryCalls"],evidence={"JohnCalls":"yes"}))
 
-    #Query 2- the probability of Mary Calling given that John called
-    q_2 = alarm_infer.query(variables=["MaryCalls"],evidence={"JohnCalls":"yes"})
-    #print(q_2)
-    queries.append(q_2)
+    print("Query 3: The probability of both John and Mary calling given Alarm")
+    print(alarm_infer.query(variables=["MaryCalls", "JohnCalls"],evidence={"Alarm":"yes"}))
 
-    #Query 3 - The probability of both John and Mary calling given Alarm
-    q_3 = alarm_infer.query(variables=["MaryCalls", "JohnCalls"],evidence={"Alarm":"yes"})
-    #print(q_3)
-    queries.append(q_3)
-
-    #Query 4 - The probability of Alarm, given that Mary called.
-    q_4 = alarm_infer.query(variables=["Alarm"], evidence={"MaryCalls":"yes"})
-    #print(q_4)
-    queries.append(q_4)
-
-    return queries
+    print("Query 4: The probability of Alarm, given that Mary called")
+    print(alarm_infer.query(variables=["Alarm"], evidence={"MaryCalls":"yes"}))
 
 if __name__ == '__main__' :
-    q_list = create_query()
-    i = 1
-    for q in q_list :
-        print("Query:", i)
-        print(q)
-        i += 1
+    create_query()
+
