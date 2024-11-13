@@ -5,6 +5,8 @@ import argparse
 import codecs
 import os
 import sys
+from turtledemo.penrose import start
+
 import numpy as np
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -35,14 +37,17 @@ class HMM:
         self.emissions = emissions
 
     ## part 1 - you do this.
+    ## global variable for lander cases
+    LANDER = False
     #TODO: Create unit test for load
     def load(self, basename):
         """reads HMM structure from transition (basename.trans),
         and emission (basename.emit) files,
         as well as the probabilities."""
+        if basename == 'lander' :
+            HMM.LANDER = True
         emit_dict = {}
         trans_dict = {}
-        val_dict = {}
         emit = open((basename + '.emit')).readlines()
         for e in emit :
             #print(e)
@@ -61,49 +66,97 @@ class HMM:
         self.emissions = emit_dict
 
    ## you do this.
+   #One cool thing we can do with an HMM is Monte Carlo simulation.
+    # We'll do this using generate. So implement that next.
+    # It should take an integer n, and return a Sequence of length n.
+    # To generate this, start in the initial state and
+    # repeatedly select successor states at random, using the transition probability as a weight,
+    # and then select an emission, using the emission probability as a weight.
+    # You may find either numpy.random.choice or random.choices very helpful here. B
+    # e sure that you are using the transition probabilities to determine the next state, and not a uniform distribution!
     def generate(self, n):
-        emit_seq = []
-        trans_seq = []
+        emis_states = []
+        trans_states = []
+        # get the start state from "#"
+        start_states = [v for v in self.transitions.get("#")]
+        start_weights = []
+        for state in start_states :
+            start_weights.append(self.transitions.get("#", {}).get(state))
+        cur_state = np.random.choice(start_states, p=start_weights)
+        for i in range(n) :
+            ## emissions
+            next_emis_states = [v for v in self.emissions.get(cur_state)]
+            next_emis_weights = []
+            for state in next_emis_states:
+                next_emis_weights.append(self.emissions.get(cur_state, {}).get(state))
+            ## transitions
+            next_states = [v for v in self.transitions.get(cur_state)]
+            next_weights = []
+            for state in next_states:
+                next_weights.append(self.transitions.get(cur_state, {}).get(state))
 
-        emit_seq_list = list(self.emissions.values())
-        trans_seq_list = list(self.transitions.values())
+            emis_states.append(np.random.choice(next_emis_states, p=next_emis_weights))
+            cur_state = np.random.choice(next_states, p=next_weights)
+            trans_states.append(cur_state)
+        return Sequence(trans_states, emis_states)
 
-        # ref: - https://sparkbyexamples.com/python/get-python-dictionary-values-to-list/
-        emits_list = [e for e in emit_seq_list[1]]
-        trans_list = [t for t in trans_seq_list[1]]
-
-        emit_seq_list = [list(p.values())for p in emit_seq_list]
-        trans_seq_list = [list(q.values())for q in trans_seq_list]
-        """return an n-length Sequence by randomly sampling from this HMM."""
-       ## starting state
-        emit_state = np.random.choice(list(emits_list), p=emit_seq_list[0])
-        trans_state = np.random.choice(list(trans_list), p=trans_seq_list[0])
-
-        emit_seq.append(emit_state)
-        trans_seq.append(trans_state)
-        for i in range(n - 1):
-            p_n = random.randint(0, len(trans_list) - 1)
-            n_ts = np.random.choice(trans_list, p=trans_seq_list[p_n])
-            n_es = np.random.choice(emits_list, p=emit_seq_list[p_n])
-
-            emit_seq.append(n_es)
-            trans_seq.append(n_ts)
-
-        emit_seq = [str(t) for t in emit_seq]
-        trans_seq = [str(s) for s in trans_seq]
-
-        return Sequence(trans_seq, emit_seq)
-
-
-    def forward(self, sequence):
-        pass
-    ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
+    def forward(self, sequence):
+        # setup matrix
 
+        m = []
+        intial = [v for v in self.transitions]
+        seq_row = [""] * 2 + [str(s) for s in sequence.outputseq]
+        print(seq_row)
+        m.append(seq_row)
+        for i in intial :
+            if i == '#':
+                i_row = [i] + [1.0] + [0] * len(sequence.outputseq)
+            else :
+                i_row = [i] + [0] * (len(sequence.outputseq) + 1)
+            m.append(i_row)
+        # compute values for day 1
+        for k in range(len(intial) - 1) :
+            m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][k + 2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+        # compute values for day 2,...n
+        intial.remove("#")
+        for j in range(3, len(sequence) + 2) :
+            state_index = 2
+            for state in intial :
+                s_sum = 0
+                s2_indx = 2
+                for s2 in intial :
+                    # ex: P(silent | happy) * P(happy | happy) * P(happy)
+                    # P(silent | happy) = value from emissions
+                    # P(happy | happy) = value from transitions
+                    # P(happy) = value at matrix at previous column
 
+                    s_sum += (float(self.emissions.get(state, {}).get(m[0][j])) *
+                                     float(self.transitions.get(s2, {}).get(state)) *
+                                     float(m[s2_indx][j - 1]))
+                    s2_indx += 1
+                m[state_index][j] = s_sum
+                state_index += 1
+        ## determine the most probable state
+        #get the value at the last column in each row
+        probable_state_val = m[2][len(sequence.outputseq) + 1]
 
+        probable_state_indx = 2
+        for i in range (3, len(sequence.outputseq) + 1) :
+            if m[i][len(sequence.outputseq) + 1] > probable_state_val :
+                probable_state_val = m[i][len(sequence.outputseq) + 1]
+                probable_state_indx = i
+        probable_state = m[probable_state_indx][0]
 
-
+        print("The most probable state: ",  probable_state, " with probability: ",  probable_state_val)
+        ## for lander
+        landable_states = ['4,3', '4,4', '3,4', '2,5', '5,5']
+        if HMM.LANDER :
+            if probable_state in landable_states :
+                print("Safe to land")
+            else :
+                print("Not to safe land")
+    ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
 
     def viterbi(self, sequence):
         pass
@@ -126,6 +179,6 @@ if __name__ == '__main__':
     # func = sys.argv[2]
     # param = sys.argv[3]
 
-    print(h.generate(20))
+    h.forward(h.generate(3))
 
 
