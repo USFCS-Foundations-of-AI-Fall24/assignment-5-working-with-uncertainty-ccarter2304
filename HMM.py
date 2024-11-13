@@ -8,6 +8,8 @@ import sys
 from turtledemo.penrose import start
 
 import numpy as np
+from jinja2.sandbox import MAX_RANGE
+
 
 # Sequence - represents a sequence of hidden states and corresponding
 # output variables.
@@ -107,7 +109,6 @@ class HMM:
         m = []
         intial = [v for v in self.transitions]
         seq_row = [""] * 2 + [str(s) for s in sequence.outputseq]
-        print(seq_row)
         m.append(seq_row)
         for i in intial :
             if i == '#':
@@ -140,7 +141,6 @@ class HMM:
         ## determine the most probable state
         #get the value at the last column in each row
         probable_state_val = m[2][len(sequence.outputseq) + 1]
-
         probable_state_indx = 2
         for i in range (3, len(sequence.outputseq) + 1) :
             if m[i][len(sequence.outputseq) + 1] > probable_state_val :
@@ -159,7 +159,67 @@ class HMM:
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
 
     def viterbi(self, sequence):
-        pass
+        ## create setup matrix
+        m = []
+        ## backpointer matrix
+        b = []
+
+        intial = [v for v in self.transitions]
+        seq_row = [""] * 2 + [str(s) for s in sequence.outputseq]
+        m.append(seq_row)
+        b.append(seq_row)
+        for i in intial :
+            if i == '#':
+                i_row = [i] + [1.0] + [0] * len(sequence.outputseq)
+            else :
+                i_row = [i] + [0] * (len(sequence.outputseq) + 1)
+            m.append(i_row)
+            b.append([i] + [0] * (len(sequence.outputseq) + 1))
+
+        # compute values for day 1
+        for k in range(len(intial) - 1) :
+            m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][k + 2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+        # compute values for day 2..
+        intial.remove("#")
+        for j in range(3, len(sequence) + 2) :
+            state_index = 2
+            for state in intial :
+                max_val = 0
+                s2_indx = 2
+                max_indx = 0
+                for s2 in intial :
+                    # find the value and set the max
+                    val = (float(self.emissions.get(state, {}).get(m[0][j])) *
+                                     float(self.transitions.get(s2, {}).get(state)) *
+                                     float(m[s2_indx][j - 1]))
+                    if val > max_val :
+                        max_val = val
+                        max_indx = s2_indx
+                    s2_indx += 1
+                m[state_index][j] = max_val
+                b[state_index][j] = max_indx - 1
+                state_index += 1
+
+        # #get the most likely state
+        probable_state_val = m[2][len(sequence.outputseq) + 1]
+        probable_state_indx = 2
+        for i in range (3, len(sequence.outputseq) + 1) :
+            if m[i][len(sequence.outputseq) + 1] > probable_state_val :
+                probable_state_val = m[i][len(sequence.outputseq) + 1]
+                probable_state_indx = i
+        probable_state = m[probable_state_indx][0]
+        ## traverse back using the backpointers
+        state_list = [probable_state]
+
+        current_index = probable_state_indx
+        for j in range(len(sequence.outputseq) + 1, 2, -1):
+            current_index = b[current_index][j] + 1
+            state_list.append(m[current_index][0])
+        #reverse the list
+        state_list.reverse()
+        print(state_list)
+
+
     ## You do this. Given a sequence with a list of emissions, fill in the most likely
     ## hidden states using the Viterbi algorithm.
 
@@ -167,6 +227,7 @@ class HMM:
 
 
 if __name__ == '__main__':
+    #TODO: Implement command line arguments
     h = HMM()
     h.load('cat')
     # print(h.transitions)
@@ -179,6 +240,6 @@ if __name__ == '__main__':
     # func = sys.argv[2]
     # param = sys.argv[3]
 
-    h.forward(h.generate(3))
+    h.viterbi(h.generate(3))
 
 
