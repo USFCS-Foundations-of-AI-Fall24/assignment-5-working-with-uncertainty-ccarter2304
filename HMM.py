@@ -118,7 +118,10 @@ class HMM:
             m.append(i_row)
         # compute values for day 1
         for k in range(len(intial) - 1) :
-            m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][k + 2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+            if self.emissions.get(m[k + 2][0], {}).get(m[0][2]) is not None:
+                m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+            else :
+                m[k + 2][2] = 0
         # compute values for day 2,...n
         intial.remove("#")
         for j in range(3, len(sequence) + 2) :
@@ -132,9 +135,14 @@ class HMM:
                     # P(happy | happy) = value from transitions
                     # P(happy) = value at matrix at previous column
 
-                    s_sum += (float(self.emissions.get(state, {}).get(m[0][j])) *
+                    ##Check for none type due to not emissions and values not aligning in all cases
+                    if self.emissions.get(state, {}).get(m[0][j]) is not None :
+
+                        s_sum += (float(self.emissions.get(state, {}).get(m[0][j])) *
                                      float(self.transitions.get(s2, {}).get(state)) *
                                      float(m[s2_indx][j - 1]))
+                    else :
+                        s_sum += 0.0 * float(self.transitions.get(s2, {}).get(state)) * float(m[s2_indx][j - 1])
                     s2_indx += 1
                 m[state_index][j] = s_sum
                 state_index += 1
@@ -175,10 +183,12 @@ class HMM:
                 i_row = [i] + [0] * (len(sequence.outputseq) + 1)
             m.append(i_row)
             b.append([i] + [0] * (len(sequence.outputseq) + 1))
-
         # compute values for day 1
-        for k in range(len(intial) - 1) :
-            m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][k + 2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+        for k in range(len(intial) - 2) :
+            if self.emissions.get(m[k + 2][0], {}).get(m[0][2]) is not None:
+                m[k + 2][2] = float(self.emissions.get(m[k + 2][0], {}).get(m[0][2])) * float(self.transitions.get("#", {}).get(m[k + 2][0]))
+            else :
+                m[k + 2][2] = 0
         # compute values for day 2..
         intial.remove("#")
         for j in range(3, len(sequence) + 2) :
@@ -189,9 +199,13 @@ class HMM:
                 max_indx = 0
                 for s2 in intial :
                     # find the value and set the max
-                    val = (float(self.emissions.get(state, {}).get(m[0][j])) *
+                    if self.emissions.get(state, {}).get(m[0][j]) is not None:
+                        val = (float(self.emissions.get(state, {}).get(m[0][j])) *
                                      float(self.transitions.get(s2, {}).get(state)) *
                                      float(m[s2_indx][j - 1]))
+                    else :
+                        val = 0.0  * float(self.transitions.get(s2, {}).get(state)) * float(m[s2_indx][j - 1])
+
                     if val > max_val :
                         max_val = val
                         max_indx = s2_indx
@@ -228,8 +242,9 @@ class HMM:
 
 if __name__ == '__main__':
     #TODO: Implement command line arguments
+    #TODO: Finish lander emit and trans files
     h = HMM()
-    h.load('cat')
+    h.load('partofspeech')
     # print(h.transitions)
     # print(h.emissions)
 
