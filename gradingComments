@@ -1,0 +1,57 @@
+Assignment 5 Comments:
+
+sklearn:
+
+new dataset. 5/5
+
+random forest 5/5
+
+GridSearchCV 5/5
+
+Scatterplot 5/5
+
+Belief Networks:
+
+alarm queries 5/5
+
+car queries 5/5
+
+additional node 5/5
+
+HMM:
+
+load 5/5
+
+generate 7/10 - I had to fix your argument processing - 
+argparse is much better!
+
+lander models 5/5
+
+forward 10/10
+
+viterbi 10/15
+Viterbi crashes:
+ hm.viterbi(line)
+  File "/Users/cbrooks/courses/Fall24/CS362/student_repos/assignment5/assignment-5-working-with-uncertainty-submissions/assignment-5-working-with-uncertainty-ccarter2304/HMM.py", line 234, in viterbi
+    current_index = b[current_index][j] + 1
+TypeError: can only concatenate str (not "int") to str
+
+
+
+Utility:
+
+q1 5/5
+
+q2 5/5
+
+q3 1/2 - need to renormalize probabilities.
+
+q4 1/3 - 60%
+
+q5 1/2 - how do we know this?
+
+q6 1/3 - Not really - r1 always looks better, so the satellite is not 
+helpful.
+
+86/100
+
